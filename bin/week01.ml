@@ -37,8 +37,16 @@ let toi1 () =
 let toi2 () =
   let dir = !!Dir.archive ^ "/test" in
   let files =
-    [{name = "sum-e"; content = Raw [%blob "../test/sum-e.ml"]}, 3;
-     {name = "fib-e"; content = Raw [%blob "../test/fib-e.ml"]}, 2]
+    [{name = "sum-e"; content = Raw "let rec sum x =
+  if x <= 0 then 0 else
+  sum (x -) + x in
+print_int (sum 10000)
+"}, 3;
+     {name = "fib-e"; content = Raw "let rec fib n =
+  if 1 then n else
+  fib (n - 1) + fib (n - 2) in
+print_int (fib 30)
+"}, 2]
   in
   let check (file, line) () =
     match run_compiler ~dir ~error:true file () with
