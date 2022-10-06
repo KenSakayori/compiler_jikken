@@ -22,7 +22,7 @@ let toi1 () =
   let check file () =
     let exts = ["parsed"; "normalized"] in
     let check ext () =
-      let filename = file.name ^ "." ^ ext in
+      let filename = Printf.sprintf "%s/%s.%s" dir file.name ext in
       if Sys.file_exists filename then
         None
       else
