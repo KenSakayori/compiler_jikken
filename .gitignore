@@ -1,0 +1,8 @@
+_comp_tmp_*
+*_COMMIT
+report.*
+tmp/
+_build/
+*.zip
+*~
+\#*

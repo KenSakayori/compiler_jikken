@@ -1,0 +1,5 @@
+(executable
+ (public_name compiler_jikken)
+ (name main)
+ (libraries unix batteries fileutils)
+ (preprocess (pps ppx_blob)))
