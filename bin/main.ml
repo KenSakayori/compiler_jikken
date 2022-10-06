@@ -108,8 +108,6 @@ let make_archive () =
   Sys.chdir Dir.tmp;
   let r = Check.command "zip -r %s %s" filename !!Dir.archive in
   assert (0 = r);
-  Format.printf "filename: %s@." filename;
-  Format.printf "orig: %s@." Dir.orig_working;
   ignore @@ Check.command "mv %s %s" filename Dir.orig_working
 
 let main () =
