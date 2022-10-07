@@ -2,16 +2,17 @@ open Util
 open Config
 open Assignment
 
-let command ?prefix cmd =
-  let prefix =
-    match prefix with
+let command ?filename cmd =
+  let filename =
+    match filename with
     | None -> ""
     | Some s -> s ^ "."
   in
   Log.debug "[Check.command] cwd: %s@." !!Sys.getcwd;
   Format.ksprintf (fun cmd ->
     Log.debug "[Check.command] cmd: %s@." cmd;
-    let r = Sys.command @@ Format.sprintf "%s > %sout 2> %serr" cmd prefix prefix in
+    let cmd' = Format.sprintf "%s > %sout 2> %serr" cmd filename filename in
+    let r = Sys.command cmd' in
     Log.debug "[Check.command] r: %d@." r;
     r) cmd
 
@@ -74,10 +75,11 @@ let find_compiler_directory kind () =
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
-  if 0 = command "cd %s; %s" !(compiler_dir_of_kind kind) !Env.build then
+  if 0 = command ~filename:"build" "cd %s; %s" !(compiler_dir_of_kind kind) !Env.build then
     None
   else
-    Some Build_failed
+    (ignore @@ command "mv build.err build.out %s" Dir.orig_working;
+     Some Build_failed)
 
 let check_exists file () =
   if Sys.file_exists file then
@@ -106,7 +108,7 @@ let run_compiler ?dir ?(error=false) {name; content} () =
     in
     output_string cout content;
     close_out cout;
-    let r = command "%s/%s %s > %s.out 2> %s.err" !Dir.group_compiler !Env.compiler filename filename filename in
+    let r = command ~filename "%s/%s %s" !Dir.group_compiler !Env.compiler filename in
     if 0 = r || error then
       None
     else

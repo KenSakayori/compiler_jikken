@@ -16,8 +16,8 @@ let toi1 () =
   let dir = !!Dir.archive ^ "/test" in
   FileUtil.mkdir ~parent:true dir;
   let files =
-    [{name = "sum"; content = File (!Dir.group_compiler ^ "/test/sum.ml")};
-     {name = "fib"; content = File (!Dir.group_compiler ^ "/test/fib.ml")}]
+    [{name = "sum"; content = Raw Testcases.sum};
+     {name = "fib"; content = Raw Testcases.fib}]
   in
   let check file () =
     let exts = ["parsed"; "normalized"] in
@@ -37,16 +37,8 @@ let toi1 () =
 let toi2 () =
   let dir = !!Dir.archive ^ "/test" in
   let files =
-    [{name = "sum-e"; content = Raw "let rec sum x =
-  if x <= 0 then 0 else
-  sum (x -) + x in
-print_int (sum 10000)
-"}, 3;
-     {name = "fib-e"; content = Raw "let rec fib n =
-  if 1 then n else
-  fib (n - 1) + fib (n - 2) in
-print_int (fib 30)
-"}, 2]
+    [{name = "sum-e"; content = Raw Testcases.sum_e}, 43;
+     {name = "fib-e"; content = Raw Testcases.fib_e}, 2]
   in
   let check (file, line) () =
     match run_compiler ~dir ~error:true file () with

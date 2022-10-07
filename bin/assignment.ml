@@ -70,8 +70,8 @@ let message_of r =
   | Uncaught_exception, false -> Printf.sprintf "Uncaught exception occurred"
   | Object_file_found s, true -> Printf.sprintf "%s を消してください" s
   | Object_file_found s, false -> Printf.sprintf "Remove %s" s
-  | Build_failed, true -> Printf.sprintf "ビルドに失敗しました"
-  | Build_failed, false -> Printf.sprintf "Build failed"
+  | Build_failed, true -> Printf.sprintf "ビルドに失敗しました（build.out および build.err を参照してください）"
+  | Build_failed, false -> Printf.sprintf "Build failed (See build.out and build.err)"
   | Test_failed s, true -> Printf.sprintf "テストに失敗しました（%s）" s
   | Test_failed s, false -> Printf.sprintf "Test failed (%s)" s
   | Unsupported_week_no n, true -> Printf.sprintf "第%d週の課題はサポートしていません" n
