@@ -37,7 +37,7 @@ let toi1 () =
 let toi2 () =
   let dir = !!Dir.archive ^ "/test" in
   let files =
-    [{name = "sum-e"; content = Raw Testcases.sum_e}, 43;
+    [{name = "sum-e"; content = Raw Testcases.sum_e}, 3;
      {name = "fib-e"; content = Raw Testcases.fib_e}, 2]
   in
   let check (file, line) () =
@@ -61,7 +61,23 @@ let toi2 () =
   concat_map check files ()
 
 let toi3 () =
-  []
+  let dir = !!Dir.archive ^ "/test" in
+  FileUtil.mkdir ~parent:true dir;
+  let files =
+    [{name = "sum"; content = Raw Testcases.sum};
+     {name = "fib"; content = Raw Testcases.fib}]
+  in
+  let check file () =
+    match run_compiler ~dir file () with
+    | None ->
+        let filename = Printf.sprintf "%s/%s.s" dir file.name in
+        if Sys.file_exists filename then
+          []
+        else
+          [Output_not_found "*.s"]
+    | Some e -> [e]
+  in
+  concat_map check files ()
 
 let assignments : t =
   {init;
