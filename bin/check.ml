@@ -3,15 +3,15 @@ open Config
 open Assignment
 
 let command ?filename cmd =
-  let filename =
-    match filename with
-    | None -> ""
-    | Some s -> s ^ "."
-  in
   Log.debug "[Check.command] cwd: %s@." !!Sys.getcwd;
   Format.ksprintf (fun cmd ->
     Log.debug "[Check.command] cmd: %s@." cmd;
-    let cmd' = Format.sprintf "%s > %sout 2> %serr" cmd filename filename in
+    let cmd' =
+      match filename with
+      | None -> Format.sprintf "%s > /dev/null 2> /dev/null" cmd
+      | Some file -> Format.sprintf "%s > %s.out 2> %s.err" cmd file file
+    in
+    Log.debug "[Check.command] cmd': %s@." cmd';
     let r = Sys.command cmd' in
     Log.debug "[Check.command] r: %d@." r;
     r) cmd
@@ -75,10 +75,11 @@ let find_compiler_directory kind () =
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
-  if 0 = command ~filename:"build" "cd %s; %s" !(compiler_dir_of_kind kind) !Env.build then
+  let dir = !(compiler_dir_of_kind kind) in
+  if 0 = command ~filename:"build" "cd %s; %s" dir !Env.build then
     None
   else
-    (ignore @@ command "mv build.err build.out %s" Dir.orig_working;
+    (ignore @@ command "mv %s/build.err %s/build.out %s" dir dir Dir.orig_working;
      Some Build_failed)
 
 let check_exists file () =
