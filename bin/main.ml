@@ -104,6 +104,7 @@ let check_arg () =
 
 let make_archive () =
   let filename = Printf.sprintf "%02d-%s.zip" !Env.no !Env.id in
+  Log.normal "Generating %s...@." filename;
   Sys.chdir Dir.orig_working;
   Sys.chdir Dir.tmp;
   let r = Check.command "zip -r %s %s" filename !!Dir.archive in
