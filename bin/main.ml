@@ -3,7 +3,8 @@ open Config
 open Assignment
 
 let assiginments : (int * Assignment.t) list =
-  [ 1, Week01.assignments]
+  [ 1, Week01.assignments;
+    2, Week02.assignments]
 
 let make_archive_dir () =
   let dir = Printf.sprintf "%s/%s" Dir.tmp !!Dir.archive in
