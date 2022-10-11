@@ -13,11 +13,11 @@ and error =
   | File_name_invalid of string
   | Directory_not_found of string
   | File_not_found of string
-  | Incorrect_result
+  | Incorrect_result of string list
   | Uncaught_exception
   | Object_file_found of string
   | Build_failed
-  | Test_failed of string
+  | Test_failed of string list
   | Unsupported_week_no of int
   | Unknown_error of string
   | Clone_failed
@@ -54,6 +54,14 @@ let subject_of n =
     else
       "Toi " ^ string_of_int n
 
+let note_of files =
+  if files = [] then
+    ""
+  else if !Env.jp then
+    Format.sprintf "（出力されたzipファイル中の %s を参照してください）" (String.concat ", " files)
+  else
+    Format.sprintf " (See %s in the generated zip file)" (String.concat ", " files)
+
 let message_of r =
   match r, !Env.jp with
   | Cannot_extract, true -> Printf.sprintf "入力ファイルの展開に失敗しました"
@@ -64,16 +72,16 @@ let message_of r =
   | Directory_not_found f, false -> Printf.sprintf "Directory %s not found" f
   | File_not_found f, true -> Printf.sprintf "ファイル %s が見つかりません" f
   | File_not_found f, false -> Printf.sprintf "File %s not found" f
-  | Incorrect_result, true -> Printf.sprintf "結果が正しくありません"
-  | Incorrect_result, false -> Printf.sprintf "Incorrect result"
+  | Incorrect_result files, true -> Printf.sprintf "結果が正しくありません%s" (note_of files)
+  | Incorrect_result files, false -> Printf.sprintf "Incorrect result%s" (note_of files)
   | Uncaught_exception, true -> Printf.sprintf "例外が発生しました"
   | Uncaught_exception, false -> Printf.sprintf "Uncaught exception occurred"
   | Object_file_found s, true -> Printf.sprintf "%s を消してください" s
   | Object_file_found s, false -> Printf.sprintf "Remove %s" s
   | Build_failed, true -> Printf.sprintf "ビルドに失敗しました（build.out および build.err を参照してください）"
   | Build_failed, false -> Printf.sprintf "Build failed (See build.out and build.err)"
-  | Test_failed s, true -> Printf.sprintf "テストに失敗しました（%s）" s
-  | Test_failed s, false -> Printf.sprintf "Test failed (%s)" s
+  | Test_failed files, true -> Printf.sprintf "テストに失敗しました%s" (note_of files)
+  | Test_failed files, false -> Printf.sprintf "Test failed%s" (note_of files)
   | Unsupported_week_no n, true -> Printf.sprintf "第%d週の課題はサポートしていません" n
   | Unsupported_week_no n, false -> Printf.sprintf "Not support: Week %d" n
   | Unknown_error s, true -> Printf.sprintf "不明なエラー (%s)" s

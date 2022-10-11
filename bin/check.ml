@@ -91,7 +91,7 @@ let check_exists file () =
 let check_compiler_exists kind =
   check_exists @@ Printf.sprintf "%s/%s" (string_of_kind kind) !Env.compiler
 
-let run_compiler ?dir ?(error=false) ?failed {name; content} () =
+let run_compiler ?dir ?(error=false) ?(output=[]) {name; content} () =
   let filename =
     match dir with
     | None -> name
@@ -113,11 +113,7 @@ let run_compiler ?dir ?(error=false) ?failed {name; content} () =
     if 0 = r || error then
       None
     else
-      match failed with
-      | None -> Some (Test_failed "")
-      | Some f ->
-          let msg = f () in
-          Some (Test_failed msg)
+      Some (Test_failed output)
 
 let for_all f xs () =
   List.map f xs
