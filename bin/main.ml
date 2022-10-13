@@ -92,9 +92,14 @@ let get_commit_files () =
   |> List.unique
   |> List.map commit_file_of_kind
 
-let check_arg () =
+let check_zip_command () =
+  0 <> Check.command "zip -v"
+
+let check () =
   if !Env.no = 0 then
     [Invalid_input]
+  else if not (check_zip_command ()) then
+    [Command_not_found "zip"]
   else
     match check_exists_report () with
     | Some e -> [e]
@@ -115,7 +120,7 @@ let make_archive () =
 let main () =
   let@ () = Fun.protect ~finally:finalize in
   init();
-  begin match check_arg () with
+  begin match check () with
   | [] -> ()
   | es -> show_error_and_exit es
   end;

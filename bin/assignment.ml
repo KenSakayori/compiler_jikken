@@ -27,6 +27,7 @@ and error =
   | Invalid_hash of string * string
   | Output_not_found of string
   | Exception of exn
+  | Command_not_found of string
 
 type testcase = {name: string; content: content}
 and content =
@@ -99,3 +100,5 @@ let message_of r =
   | Invalid_hash(url,hash), false -> Printf.sprintf "Cannot find commit <%s> in %s" hash url
   | Output_not_found s, true -> Printf.sprintf "出力ファイル %s が見つかりません" s
   | Output_not_found s, false -> Printf.sprintf "Output files %s not found" s
+  | Command_not_found f, true -> Printf.sprintf "コマンド %s が見つかりません" f
+  | Command_not_found f, false -> Printf.sprintf "Command %s not found" f
