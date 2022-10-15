@@ -28,6 +28,7 @@ and error =
   | Output_not_found of string
   | Exception of exn
   | Command_not_found of string
+  | Zip_failed
 
 type testcase = {name: string; content: content}
 and content =
@@ -102,3 +103,5 @@ let message_of r =
   | Output_not_found s, false -> Printf.sprintf "Output files %s not found" s
   | Command_not_found f, true -> Printf.sprintf "コマンド %s が見つかりません" f
   | Command_not_found f, false -> Printf.sprintf "Command %s not found" f
+  | Zip_failed, true -> Printf.sprintf "zip コマンドが失敗しました (zip.err を参照してください)"
+  | Zip_failed, false -> Printf.sprintf "Command zip failed (See zip.err)"

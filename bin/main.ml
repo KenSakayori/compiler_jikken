@@ -113,9 +113,13 @@ let make_archive () =
   Log.normal "Generating %s...@." filename;
   Sys.chdir Dir.orig_working;
   Sys.chdir Dir.tmp;
-  let r = Check.command "zip -r %s %s" filename !!Dir.archive in
-  assert (0 = r);
-  ignore @@ Check.command "mv %s %s" filename Dir.orig_working
+  let r = Check.command ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
+  if 0 <> r then
+    (ignore @@ Check.command "mv zip.err %s" Dir.orig_working;
+    Some Zip_failed
+  else
+    (ignore @@ Check.command "mv %s %s" filename Dir.orig_working;
+     None)
 
 let main () =
   let@ () = Fun.protect ~finally:finalize in
@@ -127,6 +131,8 @@ let main () =
   !!get_assignment
   |> Check.assignment
   |> List.iter show_results;
-  make_archive ()
+  match make_archive () with
+  | Some e -> show_error_and_exit [e]
+  | _ -> ()
 
 let () = if not !Sys.interactive then main()
