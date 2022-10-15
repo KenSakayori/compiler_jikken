@@ -33,10 +33,13 @@ let finalize () =
   if Sys.file_exists Dir.tmp && !Log.mode <> Debug then
     FileUtil.rm ~recurse:true [Dir.tmp]
 
-let show_error_and_exit es =
-  List.iter (Printf.printf "%s\n" -| message_of) es;
+let exit_with_error () =
   finalize ();
   exit 1
+
+let show_error_and_exit es =
+  List.iter (Printf.printf "%s\n" -| message_of) es;
+  exit_with_error ()
 
 let get_assignment () =
   let n = !Env.no in
@@ -92,13 +95,13 @@ let get_commit_files () =
   |> List.unique
   |> List.map commit_file_of_kind
 
-let check_zip_command () =
+let check_zip_command_exists () =
   0 = Check.command "zip -v"
 
 let check () =
   if !Env.no = 0 then
     [Invalid_input]
-  else if not (check_zip_command ()) then
+  else if not (check_zip_command_exists ()) then
     [Command_not_found "zip"]
   else
     match check_exists_report () with
@@ -128,9 +131,11 @@ let main () =
   | [] -> ()
   | es -> show_error_and_exit es
   end;
-  !!get_assignment
-  |> Check.assignment
-  |> List.iter show_results;
+  let errors = Check.assignment !!get_assignment in
+  if errors <> [] then List.iter show_results errors;
+  (match List.assoc_opt 0 errors with
+   | Some (_::_) -> exit_with_error ()
+   | _ -> ());
   match make_archive () with
   | Some e -> show_error_and_exit [e]
   | _ -> ()
