@@ -93,7 +93,7 @@ let get_commit_files () =
   |> List.map commit_file_of_kind
 
 let check_zip_command () =
-  0 <> Check.command "zip -v"
+  0 = Check.command "zip -v"
 
 let check () =
   if !Env.no = 0 then
