@@ -116,7 +116,7 @@ let make_archive () =
   let r = Check.command ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
   if 0 <> r then
     (ignore @@ Check.command "mv zip.err %s" Dir.orig_working;
-    Some Zip_failed
+    Some Zip_failed)
   else
     (ignore @@ Check.command "mv %s %s" filename Dir.orig_working;
      None)
