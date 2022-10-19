@@ -7,12 +7,8 @@ let assiginments : (int * Assignment.t) list =
     2, Week02.assignments;
     3, Week03.assignments]
 
-let make_archive_dir () =
-  let dir = Printf.sprintf "%s/%s" Dir.tmp !!Dir.archive in
-  FileUtil.mkdir ~parent:true dir
-
 let make_env_file () =
-  make_archive_dir ();
+  Command.make_archive_dir ();
   let@ cout = IO.CPS.open_out (Printf.sprintf "%s/%s/ENV" Dir.tmp !!Dir.archive) in
   let write s1 s2 = output_string cout @@ Printf.sprintf "%s: %s\n" s1 s2 in
   write "ver" Const.version;
@@ -61,43 +57,17 @@ let show_results (n, errors) =
       |> List.iter (Printf.printf "- %s\n");
       Printf.printf "\n"
 
-let find_file filename =
-  !Env.files @ Array.to_list @@ Sys.readdir "."
-  |> List.find_opt (Filename.basename |- (=) filename)
-
-let check_exists_report () =
-  let files =
-    Const.report_exts
-    |> List.map (Printf.sprintf "%s.%s" Const.report_name)
-    |> List.filter_map find_file
-  in
-  match files with
-  | [] -> Some (File_not_found (Printf.sprintf "%s.{%s}" Const.report_name (String.join "|" Const.report_exts)))
-  | file::_ ->
-      Env.report_file := file;
-      FileUtil.cp [file] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
-      None
-
-let check_exists_commit_file kind =
-  let file = commit_file_of_kind kind in
-  match find_file file with
-  | None -> Some (File_not_found file)
-  | Some file' ->
-      make_archive_dir ();
-      FileUtil.cp [file'] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
-      None
-
-let get_kinds () =
-  !!get_assignment.items
-  |> List.map Triple.snd
-
-let get_commit_files () =
-  !!get_kinds
-  |> List.unique
-  |> List.map commit_file_of_kind
+let get_kinds_for_check () =
+  let {items; check_commit_files; _} = !!get_assignment in
+  if check_commit_files then
+    items
+    |> List.map Triple.snd
+    |> List.unique
+  else
+    []
 
 let check_zip_command_exists () =
-  0 = Check.command "zip -v"
+  0 = Command.run "zip -v"
 
 let check () =
   if !Env.no = 0 then
@@ -105,33 +75,30 @@ let check () =
   else if not (check_zip_command_exists ()) then
     [Command_not_found "zip"]
   else
-    match check_exists_report () with
+    match Check.exists_report () with
     | Some e -> [e]
     | None ->
-        !!get_kinds
-        |> List.unique
-        |> List.filter_map check_exists_commit_file
+        !!get_kinds_for_check
+        |> List.filter_map (Check.exists_commit_file -$- ())
 
 let make_archive () =
   let filename = Printf.sprintf "%02d-%s.zip" !Env.no !Env.id in
   Log.normal "Generating %s...@." filename;
   Sys.chdir Dir.orig_working;
   Sys.chdir Dir.tmp;
-  let r = Check.command ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
+  let r = Command.run ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
   if 0 <> r then
-    (ignore @@ Check.command "mv zip.err %s" Dir.orig_working;
+    (Command.mv ["zip.err"] Dir.orig_working;
     Some Zip_failed)
   else
-    (ignore @@ Check.command "mv %s %s" filename Dir.orig_working;
+    (Command.mv [filename] Dir.orig_working;
      None)
 
 let main () =
   let@ () = Fun.protect ~finally:finalize in
   init();
-  begin match check () with
-  | [] -> ()
-  | es -> show_error_and_exit es
-  end;
+  let es = check () in
+  if es <> [] then show_error_and_exit es;
   let errors = Check.assignment !!get_assignment in
   if errors <> [] then List.iter show_results errors;
   (match List.assoc_opt 0 errors with

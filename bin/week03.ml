@@ -7,7 +7,8 @@ let init () = []
 
 let toi2 () =
   exec
-    [change_directory Dir.tmp;
+    [check_exists_commit_file Individual;
+     change_directory Dir.tmp;
      clone Individual;
      find_compiler_directory Individual;
      build Individual;
@@ -16,5 +17,6 @@ let toi2 () =
 
 let assignments : t =
   {init;
+   check_commit_files = false;
    items =
      [2, Individual, toi2]}

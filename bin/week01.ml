@@ -89,6 +89,7 @@ let toi3 () =
 
 let assignments : t =
   {init;
+   check_commit_files = true;
    items =
      [1, Group, toi1;
       2, Group, toi2;

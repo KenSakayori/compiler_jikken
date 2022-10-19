@@ -3,6 +3,7 @@ open Config
 
 type t =
   {init : check;
+   check_commit_files : bool;
    items : item list}
 and kind = Group | Individual
 and item = int * kind * check

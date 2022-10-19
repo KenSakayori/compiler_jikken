@@ -42,5 +42,6 @@ let toi2 () =
 
 let assignments : t =
   {init;
+   check_commit_files = true;
    items =
      [2, Group, toi2]}

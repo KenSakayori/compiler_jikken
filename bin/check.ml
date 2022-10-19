@@ -2,20 +2,6 @@ open Util
 open Config
 open Assignment
 
-let command ?filename cmd =
-  Log.debug "[Check.command] cwd: %s@." !!Sys.getcwd;
-  Format.ksprintf (fun cmd ->
-    Log.debug "[Check.command] cmd: %s@." cmd;
-    let cmd' =
-      match filename with
-      | None -> Format.sprintf "%s > /dev/null 2> /dev/null" cmd
-      | Some file -> Format.sprintf "%s > %s.out 2> %s.err" cmd file file
-    in
-    Log.debug "[Check.command] cmd': %s@." cmd';
-    let r = Sys.command cmd' in
-    Log.debug "[Check.command] r: %d@." r;
-    r) cmd
-
 let rec exec acc fs =
   match acc, fs with
   | Some e, _ -> Some e
@@ -49,8 +35,8 @@ let clone kind () =
   | Error e -> Some e
   | Ok (url, hash) ->
       Log.normal "Cloning the %s repository...@.@." name;
-      if 0 = command "git clone %s %s" url name then
-          if 0 = command "cd %s; git checkout %s" name hash then
+      if 0 = Command.run "git clone %s %s" url name then
+          if 0 = Command.run "cd %s; git checkout %s" name hash then
             None
           else
             Some (Invalid_hash(url,hash))
@@ -76,10 +62,10 @@ let find_compiler_directory kind () =
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
   let dir = !(compiler_dir_of_kind kind) in
-  if 0 = command ~filename:"build" "cd %s; %s" dir !Env.build then
+  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !Env.build then
     None
   else
-    (ignore @@ command "mv %s/build.err %s/build.out %s" dir dir Dir.orig_working;
+    (Command.mv [dir^"/build.err"; dir^"/build.out"] Dir.orig_working;
      Some Build_failed)
 
 let check_exists file () =
@@ -109,11 +95,37 @@ let run_compiler ?dir ?(error=false) ?(output=[]) {name; content} () =
     in
     output_string cout content;
     close_out cout;
-    let r = command ~filename "%s/%s %s" !Dir.group_compiler !Env.compiler filename in
+    let r = Command.run ~filename "%s/%s %s" !Dir.group_compiler !Env.compiler filename in
     if 0 = r || error then
       None
     else
       Some (Test_failed output)
+
+let find_file filename =
+  !Env.files @ Array.to_list @@ Sys.readdir "."
+  |> List.find_opt (Filename.basename |- (=) filename)
+
+let check_exists_report () =
+  let files =
+    Const.report_exts
+    |> List.map (Printf.sprintf "%s.%s" Const.report_name)
+    |> List.filter_map find_file
+  in
+  match files with
+  | [] -> Some (File_not_found (Printf.sprintf "%s.{%s}" Const.report_name (String.join "|" Const.report_exts)))
+  | file::_ ->
+      Env.report_file := file;
+      FileUtil.cp [file] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
+      None
+
+let check_exists_commit_file kind () =
+  let file = commit_file_of_kind kind in
+  match find_file file with
+  | None -> Some (File_not_found file)
+  | Some file' ->
+      Command.make_archive_dir ();
+      FileUtil.cp [file'] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
+      None
 
 let for_all f xs () =
   List.map f xs
@@ -128,7 +140,7 @@ let concat_map f xs () =
   |> List.concat_map (fun f -> f ())
 
 
-let assignment {init; items} : (int * error list) list =
+let assignment {init; items; _} : (int * error list) list =
   match init() with
   | [] ->
       (0, []) ::
@@ -136,3 +148,6 @@ let assignment {init; items} : (int * error list) list =
         Log.verbose {|Checking %s...@.|} @@ subject_of n;
         n, f ())
   | e -> [0, e]
+
+let exists_report = check_exists_report
+let exists_commit_file = check_exists_commit_file
