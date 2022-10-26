@@ -17,49 +17,43 @@ let output_of file =
   [Format.sprintf "test/%s.out" name;
    Format.sprintf "test/%s.err" name]
 
-let toi2 () =
+
+let toi23 name files () =
+  let exts = ["before_"^name; "after_"^name] in
   let dir = !!Dir.archive ^ "/test" in
   FileUtil.mkdir ~parent:true dir;
-  let files =
-    [{name = "tuple"; content = Raw Testcases.tuple}]
-  in
   let check file () =
     let output = output_of file in
-    let exts = ["before_flatten"; "after_flatten"] in
+    let filename_of ext = Printf.sprintf "%s/%s.%s" dir file.name ext in
     let check ext () =
-      let filename = Printf.sprintf "%s/%s.%s" dir file.name ext in
+      let filename = filename_of ext in
       if Sys.file_exists filename then
         None
       else
         Some (Output_not_found ("*." ^ ext))
     in
     match run_compiler ~dir ~output file () with
-    | None -> map check exts ()
+    | None ->
+        begin match map check exts () with
+        | [] ->
+            let files = List.map filename_of exts in
+            begin match List.map IO.(CPS.open_in -$- input_all) files with
+            | [s1; s2] ->
+                if s1 = s2 then
+                  []
+                else
+                  [Incorrect_result files]
+            | _ -> assert false
+            end
+        | es -> es
+        end
     | Some e -> [e]
   in
   concat_map check files ()
 
-let toi3 () =
-  let dir = !!Dir.archive ^ "/test" in
-  FileUtil.mkdir ~parent:true dir;
-  let files =
-    [{name = "tuple2"; content = Raw Testcases.tuple2}]
-  in
-  let check file () =
-    let output = output_of file in
-    let exts = ["before_TACE"; "after_TACE"] in
-    let check ext () =
-      let filename = Printf.sprintf "%s/%s.%s" dir file.name ext in
-      if Sys.file_exists filename then
-        None
-      else
-        Some (Output_not_found ("*." ^ ext))
-    in
-    match run_compiler ~dir ~output file () with
-    | None -> map check exts ()
-    | Some e -> [e]
-  in
-  concat_map check files ()
+let toi2 = toi23 "flatten" [{name = "tuple"; content = Raw Testcases.tuple}]
+
+let toi3 = toi23 "TACE" [{name = "tuple2"; content = Raw Testcases.tuple2}]
 
 let assignments : t =
   {init;
