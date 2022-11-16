@@ -49,8 +49,8 @@ let x = a.(0) in
 let y = a.(1) in
 let z = (fun s t -> s + t) x y in
 print_int z;
-print_newline ()"
-
+print_newline ()
+"
 
 let partial =
 "let a = Array.make 2 1 in
@@ -60,4 +60,5 @@ let y = a.(1) in
 let rec f x y = x + y in
 let g = f x in
 print_int (g y);
-print_newline ()"
+print_newline ()
+"
