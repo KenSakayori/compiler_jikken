@@ -5,9 +5,9 @@ open Check
 
 let init () = []
 
-let kind = Group
+let kind = Individual
 
-let toi2 () =
+let toi1 () =
   exec
     [check_exists_commit_file kind;
      change_directory Dir.tmp;
@@ -21,4 +21,4 @@ let assignments : t =
   {init;
    check_commit_files = false;
    items =
-     [2, kind, toi2]}
+     [1, kind, toi1]}
