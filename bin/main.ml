@@ -10,7 +10,10 @@ let assiginments : (int * Assignment.t) list =
     6, Week06.assignments;
     7, Week07.assignments;
     8, Week08.assignments;
-    9, Week09.assignments]
+    9, Week09.assignments;
+    10, Week10.assignments;
+    11, Week11.assignments;
+    12, Week12.assignments]
 
 let make_env_file () =
   Command.make_archive_dir ();
