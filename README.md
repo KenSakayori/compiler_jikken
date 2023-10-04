@@ -1,6 +1,6 @@
 How to install
 ==============
-Run `opam pin add -y compiler_jikken https://github.com/ryosu-sato/compiler_jikken.git#main`
+Run `opam pin add -y compiler_jikken https://github.com/KenSakayori/compiler_jikken.git#main`
 
 
 How to use

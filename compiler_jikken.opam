@@ -1,13 +1,14 @@
 opam-version: "2.0"
 name: "compiler_jikken"
+version: "1.0.0"
 synopsis: "Checker & archiver for compiler jikken"
-authors: [ "Sato, Ryosuke <rsato@is.s.u-tokyo.ac.jp>" ]
-maintainer: ["Sato, Ryosuke <rsato@is.s.u-tokyo.ac.jp>"]
-homepage: ["https://github.com/ryosu-sato/compiler_jikken"]
-bug-reports: ["https://github.com/ryosu-sato/compiler_jikken/issues"]
+authors: [ "Ken, Sakayori <sakayori@is.s.u-tokyo.ac.jp>" ]
+maintainer: ["Ken, Sakayori <sakayori@is.s.u-tokyo.ac.jp>"]
+homepage: ["https://github.com/KenSakayori/compiler_jikken"]
+bug-reports: ["https://github.com/KenSakayori/compiler_jikken/issues"]
 
 depends: [
-  "ocaml" {>= "4.13.1"}
+  "ocaml" {>= "4.14.1"}
   "ocamlfind"
   "batteries"
   "fileutils"
