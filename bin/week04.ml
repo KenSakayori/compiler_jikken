@@ -53,7 +53,7 @@ let toi23 name files () =
 
 let toi2 = toi23 "flatten" [{name = "tuple"; content = Raw Testcases.tuple}]
 
-let toi3 = toi23 "TACE" [{name = "tuple2"; content = Raw Testcases.tuple2}]
+let toi3 = toi23 "TACE" [{name = "toi3"; content = Raw Testcases.toi3}]
 
 let assignments : t =
   {init;

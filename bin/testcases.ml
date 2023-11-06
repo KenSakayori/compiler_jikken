@@ -35,11 +35,13 @@ let (y, z) = c in
 print_int x; print_int y; print_int z; print_newline ()
 "
 
-let tuple2 =
-"let a = (1, (2, 3)) in
-let (x, b) = a in
-let (y, z) = b in
-print_int x; print_int y; print_int z; print_newline ()
+(* toi3 may not be a good name. Used for week 4 *)
+let toi3 =
+"let a = Array.make 2 0 in
+a.(1) <- 1;
+let x = a.(0) in
+let y = a.(1) in
+print_int x; print_int y; print_newline ()
 "
 
 let fun_ =
