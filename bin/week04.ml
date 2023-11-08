@@ -39,7 +39,7 @@ let toi23 name files () =
             let files = List.map filename_of exts in
             begin match List.map IO.(CPS.open_in -$- input_all) files with
             | [s1; s2] ->
-                if s1 = s2 then
+                if s1 <> s2 then
                   []
                 else
                   [Incorrect_result files]
