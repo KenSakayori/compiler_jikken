@@ -11,6 +11,8 @@ let options =
    "-e", Arg.Clear Env.jp, "";
    "--build", Arg.Set_string Env.build, {|<command>  Use <command> to build ocaml projects instead of "dune build"|};
    "-b", Arg.Set_string Env.build, " The same as --build";
+   "--compiler-path", Arg.Set_string Env.compiler, {|<path-to-compiler>  Use <path-to-compiler> to run the compiler instead of "_build/default/main.exe"|};
+   "-c", Arg.Set_string Env.compiler, " The same as --compiler-path";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
