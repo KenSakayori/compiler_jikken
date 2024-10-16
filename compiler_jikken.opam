@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "compiler_jikken"
-version: "1.0.2"
+version: "v2024.1"
 synopsis: "Checker & archiver for compiler jikken"
 authors: [ "Ken, Sakayori <sakayori@is.s.u-tokyo.ac.jp>" ]
 maintainer: ["Ken, Sakayori <sakayori@is.s.u-tokyo.ac.jp>"]
