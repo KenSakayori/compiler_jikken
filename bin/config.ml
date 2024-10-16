@@ -12,8 +12,8 @@ module Env = struct
   let force = ref false
   let jp = ref true
   let files : string list ref = ref []
-  let build = ref "dune build"
-  let compiler = ref "_build/default/main.exe"
+  let build = ref "./to_x86 && make"
+  let compiler = ref "min-caml"
   let report_file = ref ""
 end
 
