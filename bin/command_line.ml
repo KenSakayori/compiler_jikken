@@ -9,8 +9,10 @@ let print_version () =
 let options =
   ["-f", Arg.Set Env.force, "";
    "-e", Arg.Clear Env.jp, "";
-   "--build", Arg.Set_string Env.build, {|<command>  Use <command> to build ocaml projects instead of "dune build"|};
+   "--build", Arg.Set_string Env.build, {|<command>  Use <command> to build min-caml instead of "./to_x86 && make"|};
    "-b", Arg.Set_string Env.build, " The same as --build";
+   "--compiler-path", Arg.Set_string Env.compiler, {|<path-to-compiler>  Use <path-to-compiler> to run the compiler instead of "min-caml"|};
+   "-c", Arg.Set_string Env.compiler, " The same as --compiler-path";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
