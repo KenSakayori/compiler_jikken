@@ -74,8 +74,8 @@ let check_exists file () =
   else
     Some (File_not_found file)
 
-let check_compiler_exists kind =
-  check_exists @@ Printf.sprintf "%s/%s" (string_of_kind kind) !Env.compiler
+let check_compiler_exists kind () =
+  (check_exists @@ Printf.sprintf "%s/%s" !(compiler_dir_of_kind kind) !Env.compiler) ()
 
 let run_compiler ?dir ?(error=false) ?(output=[]) {name; content} () =
   let filename =
