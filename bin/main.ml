@@ -29,9 +29,12 @@ let make_env_file () =
 
 let init () =
   Command_line.parse ();
-  Log.debug "Dir.tmp: %s@." Dir.tmp;
-  if not @@ Sys.file_exists Dir.tmp then Sys.mkdir Dir.tmp 0o755;
-  make_env_file ()
+  if !Env.use_cwd then
+    Log.debug "Use the current working directory@."
+  else
+    Log.debug "Dir.tmp: %s@." Dir.tmp;
+    if not @@ Sys.file_exists Dir.tmp then Sys.mkdir Dir.tmp 0o755;
+    make_env_file ()
 
 let finalize () =
   Sys.chdir Dir.orig_working;
@@ -80,12 +83,15 @@ let check_zip_command_exists () =
 let check () =
   if !Env.no = 0 then
     [Invalid_input]
-  else if not (check_zip_command_exists ()) then
+  else if not (!Env.no_archive || check_zip_command_exists ()) then
     [Command_not_found "zip"]
   else
-    match Check.exists_report () with
+    match if !Env.skip_report_check then None else Check.exists_report () with
     | Some e -> [e]
     | None ->
+      if !Env.use_cwd then
+        []
+      else
         !!get_kinds_for_check
         |> List.filter_map (Check.exists_commit_file -$- ())
 
@@ -112,8 +118,11 @@ let main () =
   (match List.assoc_opt 0 errors with
    | Some (_::_) -> exit_with_error ()
    | _ -> ());
-  match make_archive () with
-  | Some e -> show_error_and_exit [e]
-  | _ -> ()
+  if !Env.no_archive then
+    Log.verbose "Skip making archive@."
+  else
+    match make_archive () with
+    | Some e -> show_error_and_exit [e]
+    | _ -> ()
 
 let () = if not !Sys.interactive then main()

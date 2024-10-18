@@ -7,9 +7,7 @@ let init () = []
 
 let toi2 () =
   exec
-    [check_exists_commit_file Individual;
-     change_directory Dir.tmp;
-     clone Individual;
+    [checkout_repo Individual |&!Env.use_cwd&> cancel;
      find_compiler_directory Individual;
      build Individual;
      check_compiler_exists Individual]

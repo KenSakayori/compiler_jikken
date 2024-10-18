@@ -43,21 +43,34 @@ let clone kind () =
       else
         Some Clone_failed
 
-(* Must be called after clone_* *)
+let checkout_repo kind () =
+  exec
+    [change_directory Dir.tmp;
+     clone kind]
+
+type check_fn = unit -> error option
+
+let cancel : check_fn -> check_fn = Fun.const2 None
+
+(* Must be called after checkout_repo *)
 let find_compiler_directory kind () =
-  let name = string_of_kind kind in
-  match Unix.open_and_read_lines (Printf.sprintf "find %s -name to_x86" name) with
-  | [] -> Some (Compiler_directory_not_found kind)
-  | files ->
-      let file =
-        files
-        |> List.map (Pair.add_left String.length)
-        |> List.min
-        |> snd
-        |> Filename.dirname
-      in
-      compiler_dir_of_kind kind := file;
-      None
+  if !Env.use_cwd then
+    (compiler_dir_of_kind kind := ".";
+    None)
+  else
+    let name = string_of_kind kind in
+    match Unix.open_and_read_lines (Printf.sprintf "find %s -name to_x86" name) with
+    | [] -> Some (Compiler_directory_not_found kind)
+    | files ->
+        let file =
+          files
+          |> List.map (Pair.add_left String.length)
+          |> List.min
+          |> snd
+          |> Filename.dirname
+        in
+        compiler_dir_of_kind kind := file;
+        None
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);

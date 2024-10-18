@@ -5,8 +5,7 @@ open Check
 
 let init () =
   exec
-    [change_directory Dir.tmp;
-     clone Group;
+    [checkout_repo Group |&!Env.use_cwd&> cancel;
      find_compiler_directory Group;
      build Group;
      check_compiler_exists Group]

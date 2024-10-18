@@ -9,9 +9,7 @@ let kind = Individual
 
 let toi2 () =
   exec
-    [check_exists_commit_file kind;
-     change_directory Dir.tmp;
-     clone kind]
+    [checkout_repo kind |&!Env.use_cwd&> cancel]
   |> Option.to_list
 
 let assignments : t =
