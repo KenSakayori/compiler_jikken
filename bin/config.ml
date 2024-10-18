@@ -15,6 +15,9 @@ module Env = struct
   let build = ref "./to_x86 && make"
   let compiler = ref "min-caml"
   let report_file = ref ""
+  let skip_report_check = ref false
+  let no_archive = ref false
+  let use_cwd = ref false
 end
 
 module Dir = struct

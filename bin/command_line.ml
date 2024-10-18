@@ -13,6 +13,14 @@ let options =
    "-b", Arg.Set_string Env.build, " The same as --build";
    "--compiler-path", Arg.Set_string Env.compiler, {|<path-to-compiler>  Use <path-to-compiler> to run the compiler instead of "min-caml"|};
    "-c", Arg.Set_string Env.compiler, " The same as --compiler-path";
+   "--skip-report-check", Arg.Set Env.skip_report_check, " Skip report check";
+   "--no-archive", Arg.Set Env.no_archive, " Do not generate archive";
+   "--use-cwd", Arg.Set Env.use_cwd, " Use the current working directory to check the compiler";
+   "--ci", Arg.Unit (fun () ->
+      Env.skip_report_check := true;
+      Env.no_archive := true;
+      Env.use_cwd := true;
+    ), " Run in CI mode";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
