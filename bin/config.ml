@@ -8,6 +8,7 @@ end
 
 module Env = struct
   let no = ref 0
+  let toi_ids : IntSet.t ref = ref IntSet.empty
   let id = ref ""
   let force = ref false
   let jp = ref true

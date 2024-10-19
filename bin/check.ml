@@ -154,13 +154,22 @@ let concat_map f xs () =
 
 
 let assignment {init; items; _} : (int * error list) list =
-  match init() with
-  | [] ->
-      (0, []) ::
-      List.L.map items ~f:(fun (n, _, f) ->
-        Log.verbose {|Checking %s...@.|} @@ subject_of n;
-        n, f ())
-  | e -> [0, e]
+  let targets =
+    if !Env.toi_ids |> IntSet.is_empty then
+      items
+    else
+      items
+    |> List.filter (fun (n, _, _) -> !Env.toi_ids |> IntSet.mem n) in
+  if targets = [] then
+    [0, [Nothing_to_check]]
+  else
+    match init() with
+    | [] ->
+        (0, []) ::
+        List.L.map targets ~f:(fun (n, _, f) ->
+          Log.verbose {|Checking %s...@.|} @@ subject_of n;
+          n, f ())
+    | e -> [0, e]
 
 let exists_report = check_exists_report
 let exists_commit_file = check_exists_commit_file

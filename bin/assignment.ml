@@ -24,6 +24,7 @@ and error =
   | Clone_failed
   | Invalid_input
   | Invalid_format of string
+  | Nothing_to_check
   | Compiler_directory_not_found of kind
   | Invalid_hash of string * string
   | Output_not_found of string
@@ -94,6 +95,8 @@ let message_of r =
   | Exception e, true -> Printf.sprintf "エラー (%s)" (Printexc.to_string e)
   | Exception e, false -> Printf.sprintf "Error (%s)" (Printexc.to_string e)
   | Invalid_input, _ -> Printf.sprintf "%s" Command_line.usage
+  | Nothing_to_check, true -> Printf.sprintf "実行するテストがありません（コマンドの入力を確認してください）"
+  | Nothing_to_check, false -> Printf.sprintf "No test to run (Check the command input)"
   | Compiler_directory_not_found _, true -> Printf.sprintf "リポジトリにコンパイラのディレクトリが見つかりません"
   | Compiler_directory_not_found _, false -> Printf.sprintf "Cannot find the directory of a compiler in the repository"
   | Invalid_format s, true -> Printf.sprintf "%s のフォーマットが不正です" s
