@@ -26,7 +26,7 @@ let toi4 () =
   in
   let check file () =
     let output = output_of file in
-    match run_compiler ~dir ~output file () with
+    match run_compiler ~dir ~output Group file () with
     | None ->
         let filename = Printf.sprintf "%s/%s.s" dir file.name in
         if Sys.file_exists filename then

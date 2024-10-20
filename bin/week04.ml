@@ -32,7 +32,7 @@ let toi23 name files () =
       else
         Some (Output_not_found ("*." ^ ext))
     in
-    match run_compiler ~dir ~output file () with
+    match run_compiler ~dir ~output Group file () with
     | None ->
         begin match map check exts () with
         | [] ->

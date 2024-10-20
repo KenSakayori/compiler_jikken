@@ -45,24 +45,37 @@ let clone kind () =
 
 (* Must be called after clone_* *)
 let find_compiler_directory kind () =
-  let name = string_of_kind kind in
-  match Unix.open_and_read_lines (Printf.sprintf "find %s -name to_x86" name) with
-  | [] -> Some (Compiler_directory_not_found kind)
-  | files ->
-      let file =
+  let find_shallowest_dir_in dir name =
+    match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir name) with
+    | [] -> None
+    | files ->
         files
         |> List.map (Pair.add_left String.length)
         |> List.min
         |> snd
         |> Filename.dirname
-      in
-      compiler_dir_of_kind kind := file;
-      None
+        |> Option.some
+  in
+  let update_if_empty string_ref with_value = if !string_ref = "" then string_ref := with_value in
+
+  let base_dir = string_of_kind kind in
+  let open Option in
+  (* hint file,  build command,      compiler exe file path,      exec command *)
+  ["to_x86",     "./to_x86 && make", "mincaml",                   "mincaml";
+   "dune",       "dune build",       "./_build/default/main.exe", "dune exec mincaml --";
+   "Cargo.toml", "cargo build",      "",                          "cargo run --"]
+  |> List.find_map_default (fun (hint, cmd, path, exec) ->
+       let* dir = find_shallowest_dir_in base_dir hint in
+       compiler_dir_of_kind kind := dir;
+       update_if_empty (build_of_kind kind) cmd;
+       update_if_empty (compiler_path_of_kind kind) path;
+       update_if_empty (compiler_exec_of_kind kind) exec;
+       return None) (Some (Compiler_directory_not_found kind))
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
   let dir = !(compiler_dir_of_kind kind) in
-  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !Env.build then
+  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !(build_of_kind kind) then
     None
   else
     (Command.mv [dir^"/build.err"; dir^"/build.out"] Dir.orig_working;
@@ -74,10 +87,14 @@ let check_exists file () =
   else
     Some (File_not_found file)
 
-let check_compiler_exists kind =
-  check_exists @@ Printf.sprintf "%s/%s" (string_of_kind kind) !Env.compiler
+let check_compiler_exists kind () =
+  let compiler_path = !(compiler_path_of_kind kind) in
+  if compiler_path = "" then
+    None
+  else
+    check_exists (Printf.sprintf "%s/%s" (string_of_kind kind) compiler_path) ()
 
-let run_compiler ?dir ?(error=false) ?(output=[]) {name; content} () =
+let run_compiler ?dir ?(error=false) ?(output=[]) kind {name; content} () =
   let filename =
     match dir with
     | None -> name
@@ -95,7 +112,7 @@ let run_compiler ?dir ?(error=false) ?(output=[]) {name; content} () =
     in
     output_string cout content;
     close_out cout;
-    let r = Command.run ~filename "%s/%s %s" !Dir.group_compiler !Env.compiler filename in
+    let r = Command.run ~filename "cd %s; %s %s" !(compiler_dir_of_kind kind) !(compiler_exec_of_kind kind) filename in
     if 0 = r || error then
       None
     else

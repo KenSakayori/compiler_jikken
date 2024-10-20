@@ -12,8 +12,12 @@ module Env = struct
   let force = ref false
   let jp = ref true
   let files : string list ref = ref []
-  let build = ref "./to_x86 && make"
-  let compiler = ref "min-caml"
+  let group_build = ref ""
+  let individual_build = ref ""
+  let group_compiler_path = ref ""
+  let individual_compiler_path = ref ""
+  let group_exec = ref ""
+  let individual_exec = ref ""
   let report_file = ref ""
 end
 

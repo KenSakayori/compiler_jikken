@@ -34,7 +34,7 @@ let toi2 () =
       else
         Some (Output_not_found ("*." ^ ext))
     in
-    match run_compiler ~dir ~output file () with
+    match run_compiler ~dir ~output Group file () with
     | None -> map check exts ()
     | Some e -> [e]
   in
