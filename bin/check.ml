@@ -44,7 +44,7 @@ let clone kind () =
         Some Clone_failed
 
 (* Must be called after clone_* *)
-let find_compiler_directory kind () =
+let infer_build_system kind () =
   let find_shallowest_dir_in dir name =
     match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir name) with
     | [] -> None

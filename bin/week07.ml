@@ -12,7 +12,7 @@ let toi2 () =
     [check_exists_commit_file kind;
      change_directory Dir.tmp;
      clone kind;
-     find_compiler_directory kind;
+     infer_build_system kind;
      build kind;
      check_compiler_exists kind]
   |> Option.to_list
