@@ -63,7 +63,7 @@ let infer_build_system kind () =
   (* hint file,  build command,      compiler exe file path,      exec command *)
   ["to_x86",     "./to_x86 && make", "mincaml",                   "mincaml";
    "dune",       "dune build",       "./_build/default/main.exe", "dune exec mincaml --";
-   "Cargo.toml", "cargo build",      "",                          "cargo run --"]
+   "Cargo.toml", "cargo build",      "",                          "cargo run -- -i"]
   |> List.find_map_default (fun (hint, cmd, path, exec) ->
        let* dir = find_shallowest_dir_in base_dir hint in
        compiler_dir_of_kind kind := dir;
