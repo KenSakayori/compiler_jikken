@@ -45,8 +45,8 @@ let clone kind () =
 
 (* Must be called after clone_* *)
 let infer_build_system kind () =
-  let find_shallowest_dir_in dir name =
-    match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir name) with
+  let find_shallowest_dir_in dir file =
+    match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir file) with
     | [] -> None
     | files ->
         files
@@ -60,12 +60,13 @@ let infer_build_system kind () =
 
   let base_dir = string_of_kind kind in
   let open Option in
-  (* hint file,  build command,      compiler exe file path,      exec command *)
-  ["to_x86",     "./to_x86 && make", "mincaml",                   "mincaml";
-   "dune",       "dune build",       "./_build/default/main.exe", "dune exec mincaml --";
-   "Cargo.toml", "cargo build",      "",                          "cargo run -- -i"]
+  (* hint file,  build command,      compiler exe file path,    exec command *)
+  ["dune",       "dune build",       "_build/default/main.exe", "dune exec mincaml --";
+   "to_x86",     "./to_x86 && make", "min-caml",                "./min-caml";
+   "Cargo.toml", "cargo build",      "",                        "cargo run -- -i"]
   |> List.find_map_default (fun (hint, cmd, path, exec) ->
        let* dir = find_shallowest_dir_in base_dir hint in
+       Log.debug "found the submission using %s@." hint;
        compiler_dir_of_kind kind := dir;
        update_if_empty (build_of_kind kind) cmd;
        update_if_empty (compiler_path_of_kind kind) path;
@@ -112,6 +113,7 @@ let run_compiler ?dir ?(error=false) ?(output=[]) kind {name; content} () =
     in
     output_string cout content;
     close_out cout;
+    let filename = Sys.getcwd () ^ "/" ^ filename in
     let r = Command.run ~filename "cd %s; %s %s" !(compiler_dir_of_kind kind) !(compiler_exec_of_kind kind) filename in
     if 0 = r || error then
       None
