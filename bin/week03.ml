@@ -8,7 +8,7 @@ let init () = []
 let toi2 () =
   exec
     [checkout_repo Individual |&!Env.use_cwd&> cancel;
-     find_compiler_directory Individual;
+     infer_build_system Individual;
      build Individual;
      check_compiler_exists Individual]
   |> Option.to_list

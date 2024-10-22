@@ -6,7 +6,7 @@ open Check
 let init () =
   exec
     [checkout_repo Group |&!Env.use_cwd&> cancel;
-     find_compiler_directory Group;
+     infer_build_system Group;
      build Group;
      check_compiler_exists Group]
   |> Option.to_list
@@ -33,7 +33,7 @@ let toi2 () =
       else
         Some (Output_not_found ("*." ^ ext))
     in
-    match run_compiler ~dir ~output file () with
+    match run_compiler ~dir ~output Group file () with
     | None -> map check exts ()
     | Some e -> [e]
   in

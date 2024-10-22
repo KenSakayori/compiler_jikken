@@ -10,7 +10,7 @@ let kind = Group
 let toi2 () =
   exec
     [checkout_repo kind |&!Env.use_cwd&> cancel;
-     find_compiler_directory kind;
+     infer_build_system kind;
      build kind;
      check_compiler_exists kind]
   |> Option.to_list
