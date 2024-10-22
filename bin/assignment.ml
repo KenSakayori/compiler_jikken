@@ -44,21 +44,9 @@ let commit_file_of_kind = function
   | Group -> "group_COMMIT"
   | Individual -> "my_COMMIT"
 
-let build_of_kind = function
-  | Group -> Env.group_build
-  | Individual -> Env.individual_build
-
-let compiler_path_of_kind = function
-  | Group -> Env.group_compiler_path
-  | Individual -> Env.individual_compiler_path
-
-let compiler_exec_of_kind = function
-  | Group -> Env.group_exec
-  | Individual -> Env.individual_exec
-
-let compiler_dir_of_kind = function
-  | Group -> Config.Dir.group_compiler
-  | Individual -> Config.Dir.individual_compiler
+let compiler_param_of param = function
+  | Group -> param.group
+  | Individual -> param.individual
 
 let subject_of n =
   if n <= 0 then

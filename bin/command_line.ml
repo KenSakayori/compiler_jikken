@@ -7,33 +7,41 @@ let print_version () =
   Printf.printf "%s %s\n" name Const.version
 
 module MyArgs = struct
-  let default_build = ref None
-  let group_build = ref None
-  let individual_build = ref None
-  let default_compiler_path = ref None
-  let group_compiler_path = ref None
-  let individual_compiler_path = ref None
-  let default_exec = ref None
-  let group_exec = ref None
-  let individual_exec = ref None
+  type 't option_kind = {
+    param: 't compiler_param;
+    default: 't ref;
+  }
+  let init_option param = {
+    param;
+    default = ref param.init;
+  }
+  let build = init_option Env.build
+  let compiler_path = init_option Env.compiler_path
+  let exec = init_option Env.exec
+  let arg_style = init_option Env.arg_style
 end
 
-let arg_set_opt_string ref = Arg.String (fun str -> ref := Some str)
+let spec_input_style ref = Arg.String (fun s ->
+  ref := try ArgStyle.arg_style_of_string s with _ -> raise @@ Arg.Bad {|--arg-style must be either "min-caml" or "explicit"|}
+)
 
 let options =
   ["-f", Arg.Set Env.force, "";
    "-e", Arg.Clear Env.jp, "";
-   "--build",                    arg_set_opt_string MyArgs.default_build,            "<command>  Use <command> to build compiler without inferring";
-   "--build-group",              arg_set_opt_string MyArgs.group_build,              "<command>  Similar to --build, but for group compiler";
-   "--build-individual",         arg_set_opt_string MyArgs.individual_build,         "<command>  Similar to --build, but for individual compiler";
-   "-b",                         arg_set_opt_string MyArgs.default_build,            " The same as --build";
-   "--compiler-path",            arg_set_opt_string MyArgs.default_compiler_path,    "<path>  Check if the compiler exist in <path> after build";
-   "--compiler-path-group",      arg_set_opt_string MyArgs.group_compiler_path,      "<path>  Similar to --compiler-path, but for group compiler";
-   "--compiler-path-individual", arg_set_opt_string MyArgs.individual_compiler_path, "<path>  Similar to --compiler-path, but for individual compiler";
-   "-c",                         arg_set_opt_string MyArgs.default_compiler_path,    " The same as --compiler-path";
-   "--exec",                     arg_set_opt_string MyArgs.default_exec,             "<command>  Use <command> to run the compiler without inferring";
-   "--exec-group",               arg_set_opt_string MyArgs.group_exec,               "<command>  Similar to --exec, but for group compiler";
-   "--exec-individual",          arg_set_opt_string MyArgs.individual_exec,          "<command>  Similar to --exec, but for individual compiler";
+   "--build",                    Arg.Set_string MyArgs.build.default,                  "<command>  Use <command> to build compiler without inferring";
+   "--build-group",              Arg.Set_string MyArgs.build.param.group,              "<command>  Similar to --build, but for group compiler";
+   "--build-individual",         Arg.Set_string MyArgs.build.param.individual,         "<command>  Similar to --build, but for individual compiler";
+   "-b",                         Arg.Set_string MyArgs.build.default,                  " The same as --build";
+   "--compiler-path",            Arg.Set_string MyArgs.compiler_path.default,          "<path>  Check if the compiler exist in <path> after build";
+   "--compiler-path-group",      Arg.Set_string MyArgs.compiler_path.param.group,      "<path>  Similar to --compiler-path, but for group compiler";
+   "--compiler-path-individual", Arg.Set_string MyArgs.compiler_path.param.individual, "<path>  Similar to --compiler-path, but for individual compiler";
+   "-c",                         Arg.Set_string MyArgs.compiler_path.default,          " The same as --compiler-path";
+   "--exec",                     Arg.Set_string MyArgs.exec.default,                   "<command>  Use <command> to run the compiler without inferring";
+   "--exec-group",               Arg.Set_string MyArgs.exec.param.group,               "<command>  Similar to --exec, but for group compiler";
+   "--exec-individual",          Arg.Set_string MyArgs.exec.param.individual,          "<command>  Similar to --exec, but for individual compiler";
+   "--arg-style",                spec_input_style MyArgs.arg_style.default,            "(mincaml|explicit)  Style of command line arguments of the compiler";
+   "--arg-style-group",          spec_input_style MyArgs.arg_style.param.group,        "(mincaml|explicit)  Similar to --arg-style, but for group compiler";
+   "--arg-style-individual",     spec_input_style MyArgs.arg_style.param.individual,   "(mincaml|explicit)  Similar to --arg-style, but for individual compiler";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
@@ -51,14 +59,16 @@ let usage = Printf.sprintf "Usage: %s XX-YYYYYY <files>" name
 
 let parse () =
   Arg.parse (Arg.align options) set_file usage;
-  let (||) x y =
-    match x with
-    | None -> y
-    | Some _ -> x in
-  let override_env ref option = Option.iter (fun value -> ref := value) option in
-  override_env Env.group_build (!MyArgs.group_build || !MyArgs.default_build);
-  override_env Env.individual_build (!MyArgs.individual_build || !MyArgs.default_build);
-  override_env Env.group_compiler_path (!MyArgs.group_compiler_path || !MyArgs.default_compiler_path);
-  override_env Env.individual_compiler_path (!MyArgs.individual_compiler_path || !MyArgs.default_compiler_path);
-  override_env Env.group_exec (!MyArgs.group_exec || !MyArgs.default_exec);
-  override_env Env.individual_exec (!MyArgs.individual_exec || !MyArgs.default_exec);
+
+  let open MyArgs in
+
+  let apply_default opt =
+    let to_ref ref = if !ref = opt.param.init then ref := !(opt.default) in
+    to_ref opt.param.group;
+    to_ref opt.param.individual;
+  in
+
+  apply_default build;
+  apply_default compiler_path;
+  apply_default exec;
+  apply_default arg_style;

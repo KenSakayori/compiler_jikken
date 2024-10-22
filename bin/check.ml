@@ -56,27 +56,30 @@ let infer_build_system kind () =
         |> Filename.dirname
         |> Option.some
   in
-  let update_if_empty string_ref with_value = if !string_ref = "" then string_ref := with_value in
+  let update_param param with_value =
+    let ref = compiler_param_of param kind in
+    if !ref = param.init then ref := with_value in
 
   let base_dir = string_of_kind kind in
   let open Option in
-  (* hint file,  build command,      compiler exe file path,    exec command *)
-  ["dune",       "dune build",       "_build/default/main.exe", "dune exec mincaml --";
-   "to_x86",     "./to_x86 && make", "min-caml",                "./min-caml";
-   "Cargo.toml", "cargo build",      "",                        "cargo run -- -i"]
-  |> List.find_map_default (fun (hint, cmd, path, exec) ->
+  (* hint file,  build command,      compiler exe file path,    exec command,                             input mode *)
+  ["dune",       "dune build",       "_build/default/main.exe", "dune exec mincaml --",                   MinCaml;
+   "to_x86",     "./to_x86 && make", "min-caml",                "./min-caml",                             MinCaml;
+   "Cargo.toml", "cargo build",      "",                        "cargo run -- -i ./tests/pervasives.mli", Explicit]
+  |> List.find_map_default (fun (hint, build, compiler_path, exec, arg_style) ->
        let* dir = find_shallowest_dir_in base_dir hint in
        Log.debug "found the submission using %s@." hint;
-       compiler_dir_of_kind kind := dir;
-       update_if_empty (build_of_kind kind) cmd;
-       update_if_empty (compiler_path_of_kind kind) path;
-       update_if_empty (compiler_exec_of_kind kind) exec;
+       compiler_param_of Config.Dir.compiler kind := dir;
+       update_param Env.build build;
+       update_param Env.compiler_path compiler_path;
+       update_param Env.exec exec;
+       update_param Env.arg_style arg_style;
        return None) (Some (Compiler_directory_not_found kind))
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
-  let dir = !(compiler_dir_of_kind kind) in
-  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !(build_of_kind kind) then
+  let dir = !(compiler_param_of Config.Dir.compiler kind) in
+  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !(compiler_param_of Env.build kind) then
     None
   else
     (Command.mv [dir^"/build.err"; dir^"/build.out"] Dir.orig_working;
@@ -89,7 +92,7 @@ let check_exists file () =
     Some (File_not_found file)
 
 let check_compiler_exists kind () =
-  let compiler_path = !(compiler_path_of_kind kind) in
+  let compiler_path = !(compiler_param_of Env.compiler_path kind) in
   if compiler_path = "" then
     None
   else
@@ -102,23 +105,28 @@ let run_compiler ?dir ?(error=false) ?(output=[]) kind {name; content} () =
     | Some dir -> dir ^ "/"  ^ name
   in
   Log.debug "[Check.run_compiler] filename: %s@." filename;
-  if Sys.file_exists filename then
-    invalid_arg "%s" __FUNCTION__
+  if Sys.file_exists filename then invalid_arg "%s" __FUNCTION__;
+  let real_filename = filename ^ ".ml" in
+  let cout = open_out_bin real_filename in
+  let content =
+    match content with
+    | File input -> IO.CPS.open_in input BatPervasives.input_all
+    | Raw s -> s
+  in
+  output_string cout content;
+  close_out cout;
+  let path_of =
+    let base = Sys.getcwd () in
+    fun filename -> base ^ "/" ^ filename in
+  let filename = path_of filename in
+  let arg = match !(compiler_param_of Env.arg_style kind) with
+    | MinCaml -> filename
+    | Explicit -> Format.sprintf "-i %s -o %s.s" (path_of real_filename) filename in
+  let r = Command.run ~filename "cd %s; %s %s" !(compiler_param_of Config.Dir.compiler kind) !(compiler_param_of Env.exec kind) arg in
+  if 0 = r || error then
+    None
   else
-    let cout = open_out_bin (filename ^ ".ml") in
-    let content =
-      match content with
-      | File input -> IO.CPS.open_in input BatPervasives.input_all
-      | Raw s -> s
-    in
-    output_string cout content;
-    close_out cout;
-    let filename = Sys.getcwd () ^ "/" ^ filename in
-    let r = Command.run ~filename "cd %s; %s %s" !(compiler_dir_of_kind kind) !(compiler_exec_of_kind kind) filename in
-    if 0 = r || error then
-      None
-    else
-      Some (Test_failed output)
+    Some (Test_failed output)
 
 let find_file filename =
   !Env.files @ Array.to_list @@ Sys.readdir "."
