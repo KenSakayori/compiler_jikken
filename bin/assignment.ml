@@ -44,9 +44,9 @@ let commit_file_of_kind = function
   | Group -> "group_COMMIT"
   | Individual -> "my_COMMIT"
 
-let compiler_dir_of_kind = function
-  | Group -> Config.Dir.group_compiler
-  | Individual -> Config.Dir.individual_compiler
+let compiler_param_of param = function
+  | Group -> param.group
+  | Individual -> param.individual
 
 let subject_of n =
   if n <= 0 then

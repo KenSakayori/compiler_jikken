@@ -10,7 +10,7 @@ let toi2 () =
     [check_exists_commit_file Individual;
      change_directory Dir.tmp;
      clone Individual;
-     find_compiler_directory Individual;
+     infer_build_system Individual;
      build Individual;
      check_compiler_exists Individual]
   |> Option.to_list

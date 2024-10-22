@@ -7,7 +7,7 @@ let init () =
   exec
     [change_directory Dir.tmp;
      clone Group;
-     find_compiler_directory Group;
+     infer_build_system Group;
      build Group;
      check_compiler_exists Group]
   |> Option.to_list
@@ -26,7 +26,7 @@ let toi4 () =
   in
   let check file () =
     let output = output_of file in
-    match run_compiler ~dir ~output file () with
+    match run_compiler ~dir ~output Group file () with
     | None ->
         let filename = Printf.sprintf "%s/%s.s" dir file.name in
         if Sys.file_exists filename then
