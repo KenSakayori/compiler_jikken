@@ -1,7 +1,7 @@
 open Util
 
 module Const = struct
-  let version = "v2024.1"
+  let version = "v2024.2"
   let report_name = "report"
   let report_exts = ["txt"; "md"; "pdf"]
 end
