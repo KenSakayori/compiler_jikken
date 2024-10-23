@@ -43,16 +43,17 @@ let clone kind () =
       else
         Some Clone_failed
 
-let checkout_repo kind () =
-  exec
-    [change_directory Dir.tmp;
-      clone kind]
-
 type check_fn = unit -> error option
 
-let cancel : check_fn -> check_fn = Fun.const2 None
+let do_nothing : check_fn = Fun.const None
 
-(* Must be called after clone_* *)
+let checkout_repo kind () =
+  exec
+    [change_directory Dir.orig_working;
+     change_directory Dir.tmp |&!Env.no_clone&*> do_nothing;
+     clone kind |&!Env.no_clone&*> do_nothing]
+
+(* Must be called after checkout_repo *)
 let infer_build_system kind () =
   let find_shallowest_dir_in dir file =
     match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir file) with
@@ -69,9 +70,16 @@ let infer_build_system kind () =
     let ref = compiler_param_of param kind in
     if !ref = param.init then ref := with_value in
 
-  let base_dir = string_of_kind kind in
+  let cwd = Sys.getcwd () in
+  let@ () = Fun.protect ~finally:(fun () -> Sys.chdir cwd) in
+
+  let base_dir =
+    if !Env.no_clone then begin
+      Sys.chdir Dir.orig_working;
+      "."
+    end else string_of_kind kind in
   let open Option in
-  (* hint file,  build command,      compiler exe file path,    exec command,                             input mode *)
+  (* hint file,  build command,      compiler exe file path,    exec command,                             arg style *)
   ["dune",       "dune build",       "_build/default/main.exe", "dune exec mincaml --",                   MinCaml;
    "to_x86",     "./to_x86 && make", "min-caml",                "./min-caml",                             MinCaml;
    "Cargo.toml", "cargo build",      "",                        "cargo run -- -i ./tests/pervasives.mli", Explicit]
@@ -105,13 +113,13 @@ let check_compiler_exists kind () =
   if compiler_path = "" then
     None
   else
-    check_exists (Printf.sprintf "%s/%s" (string_of_kind kind) compiler_path) ()
+    check_exists (Printf.sprintf "%s/%s" !(compiler_param_of Config.Dir.compiler kind) compiler_path) ()
 
 let run_compiler ?dir ?(error=false) ?(output=[]) kind {name; content} () =
   let filename =
     match dir with
     | None -> name
-    | Some dir -> dir ^ "/"  ^ name
+    | Some dir -> dir ^ "/" ^ name
   in
   Log.debug "[Check.run_compiler] filename: %s@." filename;
   if Sys.file_exists filename then invalid_arg "%s" __FUNCTION__;
@@ -124,13 +132,16 @@ let run_compiler ?dir ?(error=false) ?(output=[]) kind {name; content} () =
   in
   output_string cout content;
   close_out cout;
-  let path_of =
-    let base = Sys.getcwd () in
-    fun filename -> base ^ "/" ^ filename in
+
+  let cwd = Sys.getcwd () in
+  let@ () = Fun.protect ~finally:(fun () -> Sys.chdir cwd) in
+
+  let path_of filename = cwd ^ "/" ^ filename in
   let filename = path_of filename in
+  let real_filename = path_of real_filename in
   let arg = match !(compiler_param_of Env.arg_style kind) with
     | MinCaml -> filename
-    | Explicit -> Format.sprintf "-i %s -o %s.s" (path_of real_filename) filename in
+    | Explicit -> Format.sprintf "-i %s -o %s.s" real_filename filename in
   let r = Command.run ~filename "cd %s; %s %s" !(compiler_param_of Config.Dir.compiler kind) !(compiler_param_of Env.exec kind) arg in
   if 0 = r || error then
     None
@@ -142,17 +153,21 @@ let find_file filename =
   |> List.find_opt (Filename.basename |- (=) filename)
 
 let check_exists_report () =
-  let files =
-    Const.report_exts
-    |> List.map (Printf.sprintf "%s.%s" Const.report_name)
-    |> List.filter_map find_file
-  in
-  match files with
-  | [] -> Some (File_not_found (Printf.sprintf "%s.{%s}" Const.report_name (String.join "|" Const.report_exts)))
-  | file::_ ->
-      Env.report_file := file;
-      FileUtil.cp [file] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
-      None
+  if !Env.skip_report_check then
+    None
+  else
+    let files =
+      Const.report_exts
+      |> List.map (Printf.sprintf "%s.%s" Const.report_name)
+      |> List.filter_map find_file
+    in
+    match files with
+    | [] -> Some Report_not_found
+    | file::_ ->
+        Command.make_archive_dir ();
+        Env.report_file := file;
+        FileUtil.cp [file] (Printf.sprintf "%s/%s/%s" Dir.tmp !!Dir.archive file);
+        None
 
 let check_exists_commit_file kind () =
   let file = commit_file_of_kind kind in

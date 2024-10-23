@@ -1,5 +1,4 @@
 open Util
-open Config
 open Assignment
 open Check
 
@@ -9,7 +8,7 @@ let kind = Individual
 
 let toi1 () =
   exec
-    [checkout_repo kind |&!Env.use_cwd&> cancel;
+    [checkout_repo kind;
      infer_build_system kind;
      build kind;
      check_compiler_exists kind]

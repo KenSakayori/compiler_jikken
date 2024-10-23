@@ -4,6 +4,7 @@ module Const = struct
   let version = "v2024.1"
   let report_name = "report"
   let report_exts = ["txt"; "md"; "pdf"]
+  let artifact_dir = "artifact"
 end
 
 type 't compiler_param = {
@@ -37,7 +38,8 @@ module Env = struct
   let report_file = ref ""
   let skip_report_check = ref false
   let no_archive = ref false
-  let use_cwd = ref false
+  let artifact = ref false
+  let no_clone = ref false
 
   let build = init_compiler_param ""
   let compiler_path = init_compiler_param ""
@@ -49,7 +51,11 @@ module Dir = struct
   let orig_working = Sys.getcwd()
   let tmp = "_comp_tmp_" ^ Unix.string_of_time()
   let compiler = init_compiler_param ""
-  let archive() = Printf.sprintf "%02d-%s" !Env.no !Env.id
+  let archive () =
+    if !Env.no_archive then
+      "_archive"
+    else
+      Printf.sprintf "%02d-%s" !Env.no !Env.id
 end
 
 module Log = struct

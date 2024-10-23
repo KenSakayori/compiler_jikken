@@ -44,13 +44,19 @@ let options =
    "--arg-style-individual",     spec_input_style MyArgs.arg_style.param.individual,   "(mincaml|explicit)  Similar to --arg-style, but for individual compiler";
    "--toi", Arg.Int (fun id -> Env.toi_ids := IntSet.add id !Env.toi_ids), " Specify the toi ID to check";
    "--skip-report-check", Arg.Set Env.skip_report_check, " Skip report check";
-   "--no-archive", Arg.Set Env.no_archive, " Do not generate archive";
-   "--use-cwd", Arg.Set Env.use_cwd, " Use the current working directory to check the compiler";
+   "--no-archive", Arg.Set Env.no_archive, " Do not generate archive file";
+   "--artifact", Arg.Set Env.artifact, " Generate artifact for CI";
+   "--no-clone", Arg.Set Env.no_clone, " Do not clone any repo, using current working directory";
    "--ci", Arg.Unit (fun () ->
      Env.skip_report_check := true;
      Env.no_archive := true;
-     Env.use_cwd := true;
+     Env.no_clone := true;
+     Env.artifact := true;
    ), " Run in CI mode";
+   "--check", Arg.Unit (fun () ->
+     Env.no_archive := true;
+     Env.no_clone := true;
+   ), " Run checks only";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
@@ -72,7 +78,7 @@ let set_file arg =
     | _ ->
       Env.files := arg :: !Env.files
 
-let usage = Printf.sprintf "Usage: %s XX-YYYYYY <files>\n   or: %s --ci XX --toi Z" name name
+let usage = Printf.sprintf "Usage: %s XX-YYYYYY <files>\n   or: %s XX --check --toi Z --toi W" name name
 
 let parse () =
   Arg.parse (Arg.align options) set_file usage;

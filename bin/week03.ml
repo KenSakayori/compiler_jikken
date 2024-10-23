@@ -1,5 +1,4 @@
 open Util
-open Config
 open Assignment
 open Check
 
@@ -7,7 +6,7 @@ let init () = []
 
 let toi2 () =
   exec
-    [checkout_repo Individual |&!Env.use_cwd&> cancel;
+    [checkout_repo Individual;
      infer_build_system Individual;
      build Individual;
      check_compiler_exists Individual]
