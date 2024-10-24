@@ -55,8 +55,8 @@ let checkout_repo kind () =
 
 (* Must be called after checkout_repo *)
 let infer_build_system kind () =
-  let find_shallowest_dir_in dir file =
-    match Unix.open_and_read_lines (Printf.sprintf "find %s -name %s" dir file) with
+  let find_shallowest_dir_of file =
+    match Unix.open_and_read_lines (Printf.sprintf "git ls-files %s **/%s" file file) with
     | [] -> None
     | files ->
         files
@@ -73,20 +73,19 @@ let infer_build_system kind () =
   let cwd = Sys.getcwd () in
   let@ () = Fun.protect ~finally:(fun () -> Sys.chdir cwd) in
 
-  let base_dir =
-    if !Env.no_clone then begin
-      Sys.chdir Dir.orig_working;
-      "."
-    end else string_of_kind kind in
+  if !Env.no_clone then
+    Sys.chdir Dir.orig_working
+  else
+    Sys.chdir (string_of_kind kind);
   let open Option in
   (* hint file,  build command,      compiler exe file path,    exec command,                             arg style *)
   ["dune",       "dune build",       "_build/default/main.exe", "dune exec mincaml --",                   MinCaml;
    "to_x86",     "./to_x86 && make", "min-caml",                "./min-caml",                             MinCaml;
    "Cargo.toml", "cargo build",      "",                        "cargo run -- -i ./tests/pervasives.mli", Explicit]
   |> List.find_map_default (fun (hint, build, compiler_path, exec, arg_style) ->
-       let* dir = find_shallowest_dir_in base_dir hint in
+       let* dir = find_shallowest_dir_of hint in
        Log.debug "found the submission using %s@." hint;
-       compiler_param_of Config.Dir.compiler kind := dir;
+       compiler_param_of Config.Dir.compiler kind := if !Env.no_clone then dir else (string_of_kind kind) ^ "/" ^ dir;
        update_param Env.build build;
        update_param Env.compiler_path compiler_path;
        update_param Env.exec exec;
@@ -99,7 +98,7 @@ let build kind () =
   let cwd = Sys.getcwd () in
   let@ () = Fun.protect ~finally:(fun () -> Sys.chdir cwd) in
 
-  let std_output_dir = cwd ^ (if !Env.no_clone then "/" ^ Dir.tmp else "/") ^ "/" ^ !!Dir.archive ^ "logs" in
+  let std_output_dir = cwd ^ (if !Env.no_clone then "/" ^ Dir.tmp else "") ^ "/" ^ !!Dir.archive ^ "/" ^ "logs" in
   FileUtil.mkdir ~parent:true std_output_dir;
   let filename = std_output_dir ^ "/build" in
   let dir = !(compiler_param_of Config.Dir.compiler kind) in
