@@ -16,6 +16,6 @@ let toi1 () =
 
 let assignments : t =
   {init;
-   check_commit_files = false;
+   check_commit_files = true;
    items =
      [1, kind, toi1]}
