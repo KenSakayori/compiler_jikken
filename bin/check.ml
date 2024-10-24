@@ -95,12 +95,21 @@ let infer_build_system kind () =
 
 let build kind () =
   Log.normal "Building the %s compiler...@.@." (string_of_kind kind);
+  
+  let cwd = Sys.getcwd () in
+  let@ () = Fun.protect ~finally:(fun () -> Sys.chdir cwd) in
+
+  let std_output_dir = cwd ^ (if !Env.no_clone then "/" ^ Dir.tmp else "/") ^ "/" ^ !!Dir.archive ^ "logs" in
+  FileUtil.mkdir ~parent:true std_output_dir;
+  let filename = std_output_dir ^ "/build" in
   let dir = !(compiler_param_of Config.Dir.compiler kind) in
-  if 0 = Command.run ~filename:"build" "cd %s; %s" dir !(compiler_param_of Env.build kind) then
-    None
-  else
-    (Command.mv [dir^"/build.err"; dir^"/build.out"] Dir.orig_working;
-     Some Build_failed)
+  let r = Command.run ~filename "cd %s; %s" dir !(compiler_param_of Env.build kind) in
+  if !Env.artifact then begin
+    Sys.chdir Dir.orig_working;
+    Command.make_artifact_dir ();
+    Command.mv [std_output_dir^"/build.err"; std_output_dir^"/build.out"] (Const.artifact_dir ^ "/");
+  end;
+  if 0 = r then None else Some Build_failed
 
 let check_exists file () =
   if Sys.file_exists file then
