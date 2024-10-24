@@ -42,6 +42,21 @@ let options =
    "--arg-style",                spec_input_style MyArgs.arg_style.default,            "(mincaml|explicit)  Style of command line arguments of the compiler";
    "--arg-style-group",          spec_input_style MyArgs.arg_style.param.group,        "(mincaml|explicit)  Similar to --arg-style, but for group compiler";
    "--arg-style-individual",     spec_input_style MyArgs.arg_style.param.individual,   "(mincaml|explicit)  Similar to --arg-style, but for individual compiler";
+   "--toi", Arg.Int (fun id -> Env.toi_ids := IntSet.add id !Env.toi_ids), " Specify the toi ID to check";
+   "--skip-report-check", Arg.Set Env.skip_report_check, " Skip report check";
+   "--no-archive", Arg.Set Env.no_archive, " Do not generate archive file";
+   "--artifact", Arg.Set Env.artifact, " Generate artifact for CI";
+   "--no-clone", Arg.Set Env.no_clone, " Do not clone any repo, using current working directory";
+   "--ci", Arg.Unit (fun () ->
+     Env.skip_report_check := true;
+     Env.no_archive := true;
+     Env.no_clone := true;
+     Env.artifact := true;
+   ), " Run in CI mode";
+   "--check", Arg.Unit (fun () ->
+     Env.no_archive := true;
+     Env.no_clone := true;
+   ), " Run checks only";
    "-v", Arg.Unit (fun () -> print_version (); exit 0), " Output the version";
    "--silent", Arg.Unit (fun () -> Config.Log.mode := Silent), "";
    "--verbose", Arg.Unit (fun () -> Config.Log.mode := Verbose), "";
@@ -53,9 +68,17 @@ let set_file arg =
       Env.no := int_of_string s1;
       Env.id := s2
   | _ ->
+    match int_of_string_opt arg with
+    | Some no ->
+      if !Env.no <> 0 then
+        raise @@ Arg.Bad "Multiple week number specified";
+      if no < 1 || no > 13 then
+        raise @@ Arg.Bad "Week number must be between 1 and 13";
+      Env.no := no
+    | _ ->
       Env.files := arg :: !Env.files
 
-let usage = Printf.sprintf "Usage: %s XX-YYYYYY <files>" name
+let usage = Printf.sprintf "Usage: %s XX-YYYYYY <files>\n   or: %s XX --check --toi Z --toi W" name name
 
 let parse () =
   Arg.parse (Arg.align options) set_file usage;

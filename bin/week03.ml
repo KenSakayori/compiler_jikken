@@ -1,5 +1,4 @@
 open Util
-open Config
 open Assignment
 open Check
 
@@ -7,9 +6,7 @@ let init () = []
 
 let toi2 () =
   exec
-    [check_exists_commit_file Individual;
-     change_directory Dir.tmp;
-     clone Individual;
+    [checkout_repo Individual;
      infer_build_system Individual;
      build Individual;
      check_compiler_exists Individual]
@@ -17,6 +14,6 @@ let toi2 () =
 
 let assignments : t =
   {init;
-   check_commit_files = false;
+   check_commit_files = true;
    items =
      [2, Individual, toi2]}

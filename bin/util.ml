@@ -34,8 +34,10 @@ let (|&) x b f = if b then f x else x
 let (|&!) x b f = if !b then f x else x
 let (|&!!) x b f = if !!b then f x else x
 let (&>) f x = f x
+let (&*>) _f x = x
 (* usage: x |@flag&> print *)
 (* usage: x |&flag&> trans *)
+(* usage: x |&flag&*> y (* inverted postfix if *) *)
 let (-$-) f x y = f y x
 (* "f -$- x" = "fun y -> f y x" *)
 (* "(-$-) (/) x" = "fun y -> y / x" *)
