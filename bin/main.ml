@@ -65,6 +65,11 @@ let show_results (n, errors) =
       |> List.iter (Printf.printf "- %s\n");
       Printf.printf "\n"
 
+let exit_with_error_for_results (_n, results) =
+  match results with
+     | [] -> ()
+     | _::_ -> exit_with_error ()
+
 let get_kinds_for_check () =
   let {items; check_commit_files; _} = !!get_assignment in
   if check_commit_files then
@@ -116,9 +121,8 @@ let main () =
   if es <> [] then show_error_and_exit es;
   let errors = Check.assignment !!get_assignment in
   if errors <> [] then List.iter show_results errors;
-  begin match List.assoc_opt 0 errors with
-   | Some (_::_) -> exit_with_error ()
-   | _ -> () end;
+  (* Early exit if there's an error *)
+  List.iter exit_with_error_for_results errors;
   begin match make_archive () with
    | Some e -> show_error_and_exit [e]
    | _ -> () end;
