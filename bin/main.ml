@@ -80,27 +80,34 @@ let check_zip_command_exists () =
 let check () =
   if !Env.no = 0 then
     [Invalid_input]
-  else if not (check_zip_command_exists ()) then
+  else if not (!Env.no_archive || check_zip_command_exists ()) then
     [Command_not_found "zip"]
   else
     match Check.exists_report () with
     | Some e -> [e]
     | None ->
+      if !Env.no_clone then
+        []
+      else
         !!get_kinds_for_check
         |> List.filter_map (Check.exists_commit_file -$- ())
 
 let make_archive () =
-  let filename = Printf.sprintf "%02d-%s.zip" !Env.no !Env.id in
-  Log.normal "Generating %s...@." filename;
-  Sys.chdir Dir.orig_working;
-  Sys.chdir Dir.tmp;
-  let r = Command.run ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
-  if 0 <> r then
-    (Command.mv ["zip.err"] Dir.orig_working;
-    Some Zip_failed)
-  else
-    (Command.mv [filename] Dir.orig_working;
-     None)
+  if !Env.no_archive then begin
+    Log.verbose "Skip making archive@.";
+    None
+  end else
+    let filename = Printf.sprintf "%02d-%s.zip" !Env.no !Env.id in
+    Log.normal "Generating %s...@." filename;
+    Sys.chdir Dir.orig_working;
+    Sys.chdir Dir.tmp;
+    let r = Command.run ~filename:"zip" "zip -r %s %s" filename !!Dir.archive in
+    if 0 <> r then
+      (Command.mv ["zip.err"] Dir.orig_working;
+      Some Zip_failed)
+    else
+      (Command.mv [filename] Dir.orig_working;
+      None)
 
 let main () =
   let@ () = Fun.protect ~finally:finalize in
@@ -109,11 +116,16 @@ let main () =
   if es <> [] then show_error_and_exit es;
   let errors = Check.assignment !!get_assignment in
   if errors <> [] then List.iter show_results errors;
-  (match List.assoc_opt 0 errors with
+  begin match List.assoc_opt 0 errors with
    | Some (_::_) -> exit_with_error ()
-   | _ -> ());
-  match make_archive () with
-  | Some e -> show_error_and_exit [e]
-  | _ -> ()
+   | _ -> () end;
+  begin match make_archive () with
+   | Some e -> show_error_and_exit [e]
+   | _ -> () end;
+  if !Env.artifact then begin
+    Sys.chdir Dir.orig_working;
+    Command.make_artifact_dir ();
+    Command.mv [Dir.tmp ^ "/" ^ !!Dir.archive ^ "/test/*"] (Const.artifact_dir ^ "/")
+  end
 
 let () = if not !Sys.interactive then main()

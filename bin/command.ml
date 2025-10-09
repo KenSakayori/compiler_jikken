@@ -19,5 +19,7 @@ let make_archive_dir () =
   let dir = Printf.sprintf "%s/%s" Dir.tmp !!Dir.archive in
   FileUtil.mkdir ~parent:true dir
 
+let make_artifact_dir () = FileUtil.mkdir ~parent:true Const.artifact_dir
+
 let mv src dst =
   ignore @@ run "mv %s %s" (String.join " " src) dst

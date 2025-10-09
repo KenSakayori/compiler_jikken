@@ -14,6 +14,7 @@ and error =
   | File_name_invalid of string
   | Directory_not_found of string
   | File_not_found of string
+  | Report_not_found
   | Incorrect_result of string list
   | Uncaught_exception
   | Object_file_found of string
@@ -24,6 +25,7 @@ and error =
   | Clone_failed
   | Invalid_input
   | Invalid_format of string
+  | Nothing_to_check
   | Compiler_directory_not_found of kind
   | Invalid_hash of string * string
   | Output_not_found of string
@@ -75,6 +77,8 @@ let message_of r =
   | Directory_not_found f, false -> Printf.sprintf "Directory %s not found" f
   | File_not_found f, true -> Printf.sprintf "ファイル %s が見つかりません" f
   | File_not_found f, false -> Printf.sprintf "File %s not found" f
+  | Report_not_found, true -> Printf.sprintf "レポートが見つかりません。チェックが不要なら`--skip-report-check`を指定してください"
+  | Report_not_found, false -> Printf.sprintf "Report not found. Specify `--skip-report-check` to ignore this check"
   | Incorrect_result files, true -> Printf.sprintf "結果が正しくありません%s" (note_of files)
   | Incorrect_result files, false -> Printf.sprintf "Incorrect result%s" (note_of files)
   | Uncaught_exception, true -> Printf.sprintf "例外が発生しました"
@@ -94,6 +98,8 @@ let message_of r =
   | Exception e, true -> Printf.sprintf "エラー (%s)" (Printexc.to_string e)
   | Exception e, false -> Printf.sprintf "Error (%s)" (Printexc.to_string e)
   | Invalid_input, _ -> Printf.sprintf "%s" Command_line.usage
+  | Nothing_to_check, true -> Printf.sprintf "実行するテストがありません（コマンドの入力を確認してください）"
+  | Nothing_to_check, false -> Printf.sprintf "No test to run (Check the command input)"
   | Compiler_directory_not_found _, true -> Printf.sprintf "リポジトリにコンパイラのディレクトリが見つかりません"
   | Compiler_directory_not_found _, false -> Printf.sprintf "Cannot find the directory of a compiler in the repository"
   | Invalid_format s, true -> Printf.sprintf "%s のフォーマットが不正です" s

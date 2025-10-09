@@ -5,8 +5,7 @@ open Check
 
 let init () =
   exec
-    [change_directory Dir.tmp;
-     clone Group;
+    [checkout_repo Group;
      infer_build_system Group;
      build Group;
      check_compiler_exists Group]
@@ -19,6 +18,7 @@ let output_of file =
 
 let toi4 () =
   let dir = !!Dir.archive ^ "/test" in
+  let dir = if !Env.no_clone then Dir.tmp ^ "/" ^ dir else dir in
   FileUtil.mkdir ~parent:true dir;
   let files =
     [{name = "fun"; content = Raw Testcases.fun_};

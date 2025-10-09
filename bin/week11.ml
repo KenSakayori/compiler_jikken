@@ -1,5 +1,4 @@
 open Util
-open Config
 open Assignment
 open Check
 
@@ -9,9 +8,7 @@ let kind = Individual
 
 let toi2 () =
   exec
-    [check_exists_commit_file kind;
-     change_directory Dir.tmp;
-     clone kind]
+    [checkout_repo kind]
   |> Option.to_list
 
 let assignments : t =
